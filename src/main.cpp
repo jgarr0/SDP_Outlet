@@ -107,8 +107,8 @@ static int SUSTAINED_POWER_DRAW_PERIOD = -1;            // none by default
 
 // ADE9153A SPI Pins
 #define SPI_SPEED 1000000                               // SPI speed
-#define ADE9153A_MOSI (GPIO_NUM_32)                     // MOSI line => pin 29 on both ADE9153As
-#define ADE9153A_MISO (GPIO_NUM_33)                     // MISO line => pin 30 on both ADE9153As
+#define ADE9153A_MOSI (GPIO_NUM_22)                     // MOSI line => pin 29 on both ADE9153As
+#define ADE9153A_MISO (GPIO_NUM_23)                     // MISO line => pin 30 on both ADE9153As
 #define ADE9153A_SCLK (GPIO_NUM_26)                     // SCLK line => pin 31 on both ADE9153As
 #define TOP_RESET (GPIO_NUM_17)                         // rst line => pin 28 on ADE9153A #1
 #define BOTTOM_RESET (GPIO_NUM_4)                       // rst line => pin 28 on ADE9153A #2
@@ -395,8 +395,10 @@ static void sampleADE9153A(void* pvParameters){
         collected_measurements.push(json{
             {"s", currTime}, 
             {"t", {
-                {"p", int(float(topMeter.SPI_Read_32(REG_AWATT)) * CAL_POWER_CC * MEASUREMENT_MULTIPLIER)},
-                {"f", int(float(topMeter.SPI_Read_32(REG_APF))/(float)134217728 * MEASUREMENT_MULTIPLIER)}}}, 
+                //{"p", int(float(topMeter.SPI_Read_32(REG_AWATT)) * CAL_POWER_CC * MEASUREMENT_MULTIPLIER)},
+                //{"f", int(float(topMeter.SPI_Read_32(REG_APF))/(float)134217728 * MEASUREMENT_MULTIPLIER)}}}, 
+                {"p", int(MEASUREMENT_MULTIPLIER*test_rp0)},
+                {"f", int(MEASUREMENT_MULTIPLIER*test_pf0)}}},
             {"b",{
                 {"p", int(MEASUREMENT_MULTIPLIER*test_rp1)},
                 {"f", int(MEASUREMENT_MULTIPLIER*test_pf1)}}}
@@ -640,8 +642,8 @@ extern "C" void app_main() {
     vTaskDelay(1000/portTICK_PERIOD_MS);
     
     // initalize both ADE9153As
-    bool topInit = topMeter.SPI_Init(SPI_SPEED, ADE9153A_SCLK, ADE9153A_MISO, ADE9153A_MOSI, TOP_CS, TOP_RESET);
-    std::cout << "bool value: " << topInit << "\nhex value: " << std::hex << topMeter.SPI_Read_32(REG_VERSION_PRODUCT)<< std::endl;
+    //bool topInit = topMeter.SPI_Init(SPI_SPEED, ADE9153A_SCLK, ADE9153A_MISO, ADE9153A_MOSI, BOTTOM_CS, BOTTOM_RESET);
+    //std::cout << "bool value: " << topInit << "\nhex value: " << std::hex << topMeter.SPI_Read_32(REG_VERSION_PRODUCT)<< std::endl;
     // initalize bottom here
 
     // semaphore initialization
@@ -657,7 +659,7 @@ extern "C" void app_main() {
     xTaskCreatePinnedToCore(xbee_uart_event_task, "handle xbee", 4*2048, NULL, 12, NULL, 0);
     xTaskCreatePinnedToCore(parseFrame, "parse incoming frames", 2*32768, NULL, 13, NULL, 1);
     xTaskCreatePinnedToCore(sendFrame, "send frames in xbee queue", 32768, NULL, 20, NULL, 1);
-    xTaskCreatePinnedToCore(getTime2, "print time", 16384, NULL, 13, NULL, 1);
+    //xTaskCreatePinnedToCore(getTime2, "print time", 16384, NULL, 13, NULL, 1);
     xTaskCreatePinnedToCore(sampleADE9153A, "form measurements", 2*2048, NULL, 20, NULL, 1);  
     xTaskCreatePinnedToCore(formMeasurementFrames, "form measurements", 16384, NULL, 20, NULL, 1);  
     xTaskCreatePinnedToCore(printHeap, "print heap", 1024, NULL, 20, NULL, 1);  
